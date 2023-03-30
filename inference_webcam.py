@@ -24,15 +24,14 @@ bindings = []
 stream = cuda.Stream()
 
 for binding in engine:
-    shape = engine.get_tensor_shape(binding)
-    dtype = trt.nptype(engine.get_tensor_dtype(binding))
+    shape = engine.get_binding_shape(binding)
+    dtype = trt.nptype(engine.get_binding_dtype(binding))
     
     host_mem = np.empty(shape, dtype=dtype)
     device_mem = cuda.mem_alloc(host_mem.nbytes) #allouer une place dans le GPU pour chaque binding
     bindings.append(int(device_mem)) #list des address dans le GPU
 
-    if engine.get_tensor_mode(binding) == trt.TensorIOMode.INPUT:
-        shape = engine.get_tensor_shape(binding)
+    if engine.binding_is_input(binding):
         print('input', binding)
         input.append(HostDeviceMem(host_mem, device_mem))
     else:
