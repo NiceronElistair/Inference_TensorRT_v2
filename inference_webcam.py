@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import pycuda.driver as cuda
 import pycuda.autoinit
+import time
 
 from utils_cuda import HostDeviceMem
 
@@ -42,6 +43,9 @@ context = engine.create_execution_context()
 
 cap = cv2.VideoCapture(0)
 
+prev_frame_time = 0
+new_frame_time = 0
+
 while True:
     _, im0 = cap.read()
 
@@ -51,10 +55,16 @@ while True:
     if len(im.shape) == 3:
         im = im[None]  # expand for batch dim
 
+    new_frame_time = time.time()
+
     np.copyto(input[0].host, im)
     cuda.memcpy_htod_async(input[0].device, input[0].host)
     succes = context.execute_async_v2(bindings=bindings, stream_handle=stream.handle)
     cuda.memcpy_dtoh_async(outputs[-1].host, outputs[-1].device)
 
-    print('ok')
+    fps = 1/(new_frame_time-prev_frame_time)
+    prev_frame_time = new_frame_time
+    fps = int(fps)
+
+    print('fps', fps)
 
